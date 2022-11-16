@@ -1,0 +1,115 @@
+---
+title: "index"
+output: html_document
+date: "2022-11-16"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(readr)
+library(widyr)
+library(tidytext)
+library(ggplot2)
+library(stringr)
+library(RColorBrewer)
+library(scales)
+library(ggeasy)
+library(patchwork)
+library(ggraph)
+library(igraph)
+library(tidygraph)
+library(dplyr)
+
+```
+
+
+```{r setup, include=FALSE}
+#Import data
+read_csv("data/ORCIDS_Persistence_11.21.csv") -> persistence
+read_csv("data/SP2021_C1_WKSHP1.csv") -> C1
+read_csv("data/SU2021_C2_WKSHP1.csv") -> C2
+
+```
+
+```{r setup, include=FALSE}
+#Generate interactions and social network for cohort 1
+select(C1, 3,8:13) -> DBdata_1 #MessageID, Forum Name, Parent Post/InReplyTo, ThreadID, AuthorFrom
+select(DBdata_1, 1,7) -> messageID #MessageID, AuthorFrom
+na.omit(DBdata_1) -> DBdata_2 #Removes initial
+select(DBdata_2, 2:4,7) -> DBdata_3 #Forum Name, Parent Post/InReplyTo, ThreadID, AuthorFrom
+  colnames(DBdata_3)[2] <- c("MessageID") #change InReplyTo to message ID
+  colnames(DBdata_3)[4] <- c("AuthorFrom") 
+inner_join(messageID, DBdata_3, by = "MessageID") -> DBdata_4
+colnames(DBdata_4)[2] <- c("AuthorTo")
+DBdata_4[c(3,5,2,1,4)] -> DBdata_5
+DBdata_5[order(DBdata_5$"ForumName"),] -> DBdata_6
+select(DBdata_6, 2,3) -> DBdata_6
+gr <- graph_from_data_frame(DBdata_6, directed = TRUE)
+
+#Generate interactions and social network for cohort 2
+select(C2, 3,8:13) -> DBdata_1 #MessageID, Forum Name, Parent Post/InReplyTo, ThreadID, AuthorFrom
+select(DBdata_1, 1,7) -> messageID #MessageID, AuthorFrom
+na.omit(DBdata_1) -> DBdata_2 #Removes initial
+select(DBdata_2, 2:4,7) -> DBdata_3 #Forum Name, Parent Post/InReplyTo, ThreadID, AuthorFrom
+  colnames(DBdata_3)[2] <- c("MessageID") #change InReplyTo to message ID
+  colnames(DBdata_3)[4] <- c("AuthorFrom") 
+inner_join(messageID, DBdata_3, by = "MessageID") -> DBdata_4
+colnames(DBdata_4)[2] <- c("AuthorTo")
+DBdata_4[c(3,5,2,1,4)] -> DBdata_5
+DBdata_5[order(DBdata_5$"ForumName"),] -> DBdata_6
+select(DBdata_6, 2,3) -> DBdata_6
+gr1 <- graph_from_data_frame(DBdata_6, directed = TRUE)
+```
+
+```{r}
+#Generate centrality measures for cohort 1 and 2
+Centrality <- function(gr){
+Names = V(gr)$name
+In_Degree = degree(gr, mode = c("in"))
+Out_Degree = degree(gr, mode = c("out"))
+Betweenness = betweenness(gr, normalized = TRUE)
+In_Closeness = closeness(gr, mode = "in", normalized = TRUE)
+Out_Closeness = closeness(gr, mode = "out", normalized = TRUE)
+df = tibble(Names, In_Degree, Out_Degree, Betweenness, In_Closeness, Out_Closeness)
+return(df)
+}
+Centrality(gr) -> C1_centrality
+Centrality(gr1) -> C2_centrality
+```
+
+```{r setup, include=FALSE}
+#combine persistence data with centrality data to prep for correlation
+select(persistence,2,7,8) -> P1
+slice(P1,1:16,18:22,25,27:29,31) -> P1
+  colnames(P1)[1] <- c("Names")
+inner_join(C1_centrality, P1, by = "Names") -> C1_full
+inner_join(C2_centrality, P1, by = "Names") -> C2_full
+```
+
+```{r}
+#generate pearson correlation coefficient
+cor.test(C1_full$Persistence_1, C1_full$In_Degree, conf.level = .95) -> c1.id
+cor.test(C1_full$Persistence_1, C1_full$Out_Degree, conf.level = .95) -> c1.od
+cor.test(C1_full$Persistence_1, C1_full$Betweenness, conf.level = .95) -> c1.b
+cor.test(C1_full$Persistence_1, C1_full$Out_Closeness, conf.level = .95) -> c1.oc
+cor.test(C1_full$Persistence_1, C1_full$In_Closeness, conf.level = .95) -> c1.ic
+cor.test(C2_full$Persistence_1, C2_full$In_Degree, conf.level = .95) -> c2.id
+cor.test(C2_full$Persistence_1, C2_full$Out_Degree, conf.level = .95) -> c2.od
+cor.test(C2_full$Persistence_1, C2_full$Betweenness, conf.level = .95) -> c2.b
+cor.test(C2_full$Persistence_1, C2_full$Out_Closeness, conf.level = .95) -> c2.oc
+cor.test(C2_full$Persistence_1, C2_full$In_Closeness, conf.level = .95) -> c2.ic
+```
+
+```{r}
+#Organize results into a table
+Correlations <- data_frame(
+  Centrality_Measure = c("In_degree", "Out_degree", "Betweenness", "Out_closeness", "In_closeness"),
+  Cohort_1 = c(c1.id$estimate, c1.od$estimate,c1.b$estimate,c1.oc$estimate,c1.ic$estimate),
+  C1_p_value = c(c1.id$p.value, c1.od$p.value,c1.b$p.value,c1.oc$p.value,c1.ic$p.value),
+  Cohort_2 = c(c2.id$estimate, c2.od$estimate,c2.b$estimate,c2.oc$estimate,c2.ic$estimate),
+  C2_p_value = c(c2.id$p.value, c2.od$p.value,c2.b$p.value,c2.oc$p.value,c2.ic$p.value),
+)
+
+```
+
