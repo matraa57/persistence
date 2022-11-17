@@ -26,7 +26,7 @@ library(dplyr)
 
 ```{r setup, include=FALSE}
 #Import data
-read_csv("data/ORCIDS_Persistence_11.21.csv") -> persistence
+read_csv("data/Persistence_11.21.csv") -> persistence
 read_csv("data/SP2021_C1_WKSHP1.csv") -> C1
 read_csv("data/SU2021_C2_WKSHP1.csv") -> C2
 
@@ -89,16 +89,16 @@ inner_join(C2_centrality, P1, by = "Names") -> C2_full
 
 ```{r}
 #generate pearson correlation coefficient
-cor.test(C1_full$Persistence_1, C1_full$In_Degree, conf.level = .95) -> c1.id
-cor.test(C1_full$Persistence_1, C1_full$Out_Degree, conf.level = .95) -> c1.od
-cor.test(C1_full$Persistence_1, C1_full$Betweenness, conf.level = .95) -> c1.b
-cor.test(C1_full$Persistence_1, C1_full$Out_Closeness, conf.level = .95) -> c1.oc
-cor.test(C1_full$Persistence_1, C1_full$In_Closeness, conf.level = .95) -> c1.ic
-cor.test(C2_full$Persistence_1, C2_full$In_Degree, conf.level = .95) -> c2.id
-cor.test(C2_full$Persistence_1, C2_full$Out_Degree, conf.level = .95) -> c2.od
-cor.test(C2_full$Persistence_1, C2_full$Betweenness, conf.level = .95) -> c2.b
-cor.test(C2_full$Persistence_1, C2_full$Out_Closeness, conf.level = .95) -> c2.oc
-cor.test(C2_full$Persistence_1, C2_full$In_Closeness, conf.level = .95) -> c2.ic
+cor.test(C1_full$Persistence, C1_full$In_Degree, conf.level = .95) -> c1.id
+cor.test(C1_full$Persistence, C1_full$Out_Degree, conf.level = .95) -> c1.od
+cor.test(C1_full$Persistence, C1_full$Betweenness, conf.level = .95) -> c1.b
+cor.test(C1_full$Persistence, C1_full$Out_Closeness, conf.level = .95) -> c1.oc
+cor.test(C1_full$Persistence, C1_full$In_Closeness, conf.level = .95) -> c1.ic
+cor.test(C2_full$Persistence, C2_full$In_Degree, conf.level = .95) -> c2.id
+cor.test(C2_full$Persistence, C2_full$Out_Degree, conf.level = .95) -> c2.od
+cor.test(C2_full$Persistence, C2_full$Betweenness, conf.level = .95) -> c2.b
+cor.test(C2_full$Persistence, C2_full$Out_Closeness, conf.level = .95) -> c2.oc
+cor.test(C2_full$Persistence, C2_full$In_Closeness, conf.level = .95) -> c2.ic
 ```
 
 ```{r}
